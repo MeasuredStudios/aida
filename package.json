@@ -1,12 +1,12 @@
 {
-    "title": "Coming Soon",
-    "name": "startbootstrap-coming-soon",
+    "title": "aida",
+    "name": "aida-solutions",
     "version": "5.0.4",
     "scripts": {
         "start": "gulp watch",
         "build": "gulp build"
     },
-    "description": "Coming Soon is a Bootstrap 4 coming soon page theme.",
+    "description": "Coming Soon.",
     "keywords": [
         "css",
         "sass",
@@ -30,16 +30,16 @@
         "url": "https://github.com/BlackrockDigital/startbootstrap-coming-soon.git"
     },
     "dependencies": {
-        "@fortawesome/fontawesome-free": "5.8.1",
+        "@fortawesome/fontawesome-free": "5.8.2",
         "bootstrap": "4.3.1",
         "jquery": "^3.4.1"
     },
     "devDependencies": {
         "browser-sync": "^2.26.5",
-        "del": "4.0.0",
-        "gulp": "4.0.0",
-        "gulp-autoprefixer": "6.0.0",
-        "gulp-clean-css": "4.0.0",
+        "del": "4.1.1",
+        "gulp": "4.0.2",
+        "gulp-autoprefixer": "6.1.0",
+        "gulp-clean-css": "4.2.0",
         "gulp-header": "2.0.7",
         "gulp-plumber": "^1.2.1",
         "gulp-rename": "1.4.0",
