@@ -1,0 +1,63 @@
+# editorconfig.org
+
+#################
+# Common Settings
+#################
+
+# This file is the top-most EditorConfig file
+root = true
+
+# All Files
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = false
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# JSON Files
+[*.{json,json5}]
+indent_style = space
+indent_size = 2
+
+# YAML Files
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Tab indentation (no size specified)
+[Makefile]
+indent_style = tab
+
+# Bash Files
+[*.sh]
+end_of_line = lf
+
+# Markdown & EEX
+[*.md, markdown, eex]
+max_line_length = off
+trim_trailing_whitespace = false
+
+# JavaScript
+[*.{js,json}]
+charset = utf-8
+end_of_line = lf
+indent_size = 2
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# TypeScript
+
+# Elm
+
+# Python
+[*.py]
+charset = utf-8
+end_of_line = lf
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true

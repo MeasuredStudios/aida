@@ -1,130 +1,219 @@
-"use strict";
+//
+// Variables ===================================
+//
 
-// Load plugins
-const autoprefixer = require("gulp-autoprefixer");
-const browsersync = require("browser-sync").create();
-const cleanCSS = require("gulp-clean-css");
-const del = require("del");
-const gulp = require("gulp");
-const header = require("gulp-header");
-const merge = require("merge-stream");
-const plumber = require("gulp-plumber");
-const rename = require("gulp-rename");
-const sass = require("gulp-sass");
-const uglify = require("gulp-uglify");
+// Load dependencies
+const autoprefixer = require('gulp-autoprefixer');
+const browsersync = require('browser-sync').create();
+const cached = require('gulp-cached');
+const cleancss = require('gulp-clean-css');
+const del = require('del');
+const fileinclude = require('gulp-file-include');
+const gulp = require('gulp');
+const gulpif = require('gulp-if');
+const npmdist = require('gulp-npm-dist');
+const replace = require('gulp-replace');
+const sass = require('gulp-sass');
+const uglify = require('gulp-uglify');
+const useref = require('gulp-useref');
 
-// Load package.json for banner
-const pkg = require('./package.json');
+// Define paths
+const paths = {
+  base: {
+    base: {
+      dir: './',
+    },
+    node: {
+      dir: './node_modules',
+    },
+    packageLock: {
+      files: './package-lock.json',
+    },
+  },
+  dist: {
+    base: {
+      dir: './dist',
+    },
+    libs: {
+      dir: './dist/assets/libs',
+    },
+  },
+  src: {
+    base: {
+      dir: './src',
+      files: './src/**/*',
+    },
+    css: {
+      dir: './src/assets/css',
+      files: './src/assets/css/**/*',
+    },
+    html: {
+      dir: './src',
+      files: './src/**/*.html',
+    },
+    img: {
+      dir: './src/assets/img',
+      files: './src/assets/img/**/*',
+    },
+    js: {
+      dir: './src/assets/js',
+      files: './src/assets/js/**/*',
+    },
+    partials: {
+      dir: './src/partials',
+      files: './src/partials/**/*',
+    },
+    scss: {
+      dir: './src/assets/scss',
+      files: './src/assets/scss/**/*',
+      main: './src/assets/scss/*.scss',
+    },
+    tmp: {
+      dir: './src/.tmp',
+      files: './src/.tmp/**/*',
+    },
+  },
+};
 
-// Set the banner content
-const banner = ['/*!\n',
-  ' * Start Bootstrap - <%= pkg.title %> v<%= pkg.version %> (<%= pkg.homepage %>)\n',
-  ' * Copyright 2013-' + (new Date()).getFullYear(), ' <%= pkg.author %>\n',
-  ' * Licensed under <%= pkg.license %> (https://github.com/BlackrockDigital/<%= pkg.name %>/blob/master/LICENSE)\n',
-  ' */\n',
-  '\n'
-].join('');
+//
+// Tasks ===================================
+//
 
-// BrowserSync
-function browserSync(done) {
+gulp.task('browsersync', function(callback) {
   browsersync.init({
     server: {
-      baseDir: "./"
+      baseDir: [paths.src.tmp.dir, paths.src.base.dir, paths.base.base.dir],
     },
-    port: 3000
   });
-  done();
-}
+  callback();
+});
 
-// BrowserSync reload
-function browserSyncReload(done) {
+gulp.task('browsersyncReload', function(callback) {
   browsersync.reload();
-  done();
-}
+  callback();
+});
 
-// Clean vendor
-function clean() {
-  return del(["./vendor/"]);
-}
+gulp.task('watch', function() {
+  gulp.watch(paths.src.scss.files, gulp.series('scss'));
+  gulp.watch(
+    [paths.src.js.files, paths.src.img.files],
+    gulp.series('browsersyncReload')
+  );
+  gulp.watch(
+    [paths.src.html.files, paths.src.partials.files],
+    gulp.series('fileinclude', 'browsersyncReload')
+  );
+});
 
-// Bring third party dependencies from node_modules into vendor directory
-function modules() {
-  // Bootstrap
-  var bootstrap = gulp.src('./node_modules/bootstrap/dist/**/*')
-    .pipe(gulp.dest('./vendor/bootstrap'));
-  // Font Awesome
-  var fontAwesome = gulp.src('./node_modules/@fortawesome/**/*')
-    .pipe(gulp.dest('./vendor'));
-  // jQuery
-  var jquery = gulp.src([
-      './node_modules/jquery/dist/*',
-      '!./node_modules/jquery/dist/core.js'
-    ])
-    .pipe(gulp.dest('./vendor/jquery'));
-  return merge(bootstrap, fontAwesome, jquery);
-}
-
-// CSS task
-function css() {
+gulp.task('scss', function() {
   return gulp
-    .src("./scss/**/*.scss")
-    .pipe(plumber())
-    .pipe(sass({
-      outputStyle: "expanded",
-      includePaths: "./node_modules",
-    }))
-    .on("error", sass.logError)
-    .pipe(autoprefixer({
-      browsers: ['last 2 versions'],
-      cascade: false
-    }))
-    .pipe(header(banner, {
-      pkg: pkg
-    }))
-    .pipe(gulp.dest("./css"))
-    .pipe(rename({
-      suffix: ".min"
-    }))
-    .pipe(cleanCSS())
-    .pipe(gulp.dest("./css"))
+    .src(paths.src.scss.main)
+    .pipe(sass().on('error', sass.logError))
+    .pipe(autoprefixer())
+    .pipe(gulp.dest(paths.src.css.dir))
     .pipe(browsersync.stream());
-}
+});
 
-// JS task
-function js() {
+gulp.task('fileinclude', function(callback) {
   return gulp
     .src([
-      './js/*.js',
-      '!./js/*.min.js'
+      paths.src.html.files,
+      '!' + paths.src.tmp.files,
+      '!' + paths.src.partials.files,
     ])
-    .pipe(uglify())
-    .pipe(header(banner, {
-      pkg: pkg
-    }))
-    .pipe(rename({
-      suffix: '.min'
-    }))
-    .pipe(gulp.dest('./js'))
-    .pipe(browsersync.stream());
-}
+    .pipe(
+      fileinclude({
+        prefix: '@@',
+        basepath: '@file',
+        indent: true,
+      })
+    )
+    .pipe(cached())
+    .pipe(gulp.dest(paths.src.tmp.dir));
+});
 
-// Watch files
-function watchFiles() {
-  gulp.watch("./scss/**/*", css);
-  gulp.watch("./js/**/*", js);
-  gulp.watch("./**/*.html", browserSyncReload);
-}
+gulp.task('clean:tmp', function(callback) {
+  del.sync(paths.src.tmp.dir);
+  callback();
+});
 
-// Define complex tasks
-const vendor = gulp.series(clean, modules);
-const build = gulp.series(vendor, gulp.parallel(css, js));
-const watch = gulp.series(build, gulp.parallel(watchFiles, browserSync));
+gulp.task('clean:packageLock', function(callback) {
+  del.sync(paths.base.packageLock.files);
+  callback();
+});
 
-// Export tasks
-exports.css = css;
-exports.js = js;
-exports.clean = clean;
-exports.vendor = vendor;
-exports.build = build;
-exports.watch = watch;
-exports.default = build;
+gulp.task('clean:dist', function(callback) {
+  del.sync(paths.dist.base.dir);
+  callback();
+});
+
+gulp.task('copy:all', function() {
+  return gulp
+    .src([
+      paths.src.base.files,
+      '!' + paths.src.partials.dir,
+      '!' + paths.src.partials.files,
+      '!' + paths.src.scss.dir,
+      '!' + paths.src.scss.files,
+      '!' + paths.src.tmp.dir,
+      '!' + paths.src.tmp.files,
+      '!' + paths.src.js.dir,
+      '!' + paths.src.js.files,
+      '!' + paths.src.css.dir,
+      '!' + paths.src.css.files,
+      '!' + paths.src.html.files,
+    ])
+    .pipe(gulp.dest(paths.dist.base.dir));
+});
+
+gulp.task('copy:libs', function() {
+  return gulp
+    .src(npmdist(), { base: paths.base.node.dir })
+    .pipe(gulp.dest(paths.dist.libs.dir));
+});
+
+gulp.task('html', function() {
+  return gulp
+    .src([
+      paths.src.html.files,
+      '!' + paths.src.tmp.files,
+      '!' + paths.src.partials.files,
+    ])
+    .pipe(
+      fileinclude({
+        prefix: '@@',
+        basepath: '@file',
+        indent: true,
+      })
+    )
+    .pipe(replace(/href="(.{0,10})node_modules/g, 'href="$1assets/libs'))
+    .pipe(replace(/src="(.{0,10})node_modules/g, 'src="$1assets/libs'))
+    .pipe(useref())
+    .pipe(cached())
+    .pipe(gulpif('*.js', uglify()))
+    .pipe(gulpif('*.css', cleancss()))
+    .pipe(gulp.dest(paths.dist.base.dir));
+});
+
+gulp.task(
+  'build',
+  gulp.series(
+    gulp.parallel(
+      'clean:tmp',
+      'clean:packageLock',
+      'clean:dist',
+      'copy:all',
+      'copy:libs'
+    ),
+    'scss',
+    'html'
+  )
+);
+
+gulp.task(
+  'default',
+  gulp.series(
+    gulp.parallel('fileinclude', 'scss'),
+    gulp.parallel('browsersync', 'watch')
+  )
+);
